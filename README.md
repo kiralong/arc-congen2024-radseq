@@ -525,7 +525,7 @@ $ stacks-dist-extract process_radtags.MAVI2.log per_barcode_raw_read_counts > pe
 Next, we will see how to assemble a *Stacks* catalog *de novo*--assembling loci 
 and genotyping individuals without the need of a reference genome. The *de novo* 
 pipeline in *Stacks* consists of several programs used to 1. cluster reads into 
-loci in each individual (`ustacks`), 2. combine the loci of several individuals 
+loci for each individual (`ustacks`), 2. combine the loci of several individuals 
 into a catalog of loci of the metapopulation (`cstacks`), and 3. match the loci 
 of all sequenced individuals to this catalog (`sstacks`). Loci are then further 
 further processed and genotyped in `gstacks`. Since this involves running multiple 
@@ -535,15 +535,15 @@ case `denovo_map.pl`, which automates this process.
 
 #### Optimizing a *de novo* catalog generation
 
-Before generating a *de novo* catalog on the whole data, a common question is 
-which parameter should be use to generate this catalog. These parameters define 
+Before generating a *de novo* catalog on the whole dataset, a common question is 
+which parameters should be use to generate this catalog. These parameters define 
 the thresholds used to cluster alleles into loci in a single individual, and then 
 the threshold to match loci across individuals. Improper selection of these 
 thresholds means that, e.g., different alleles can be erroneously processed as 
 separate loci, or non-homologuos loci can be combined as a single locus across 
 sequenced individuals.
 
-Within *Stacks*, there are to main options that control these two threshols 
+Within *Stacks*, there are two main options that control these two thresholds 
 during *de novo* catalog generation:
 
 1. `M`: used in `ustacks` to define the number of mismatches allowed between 
@@ -559,8 +559,8 @@ sets the values of `M` by maximizing the number of loci that are recovered in 80
 of individuals in the analysis (defined by the `r` parameter in `populations`). 
 The value of `n` is set by default equal to that of `M`, with the assumption that 
 the genetic distance within and between individuals is roughly the same. The 
-general idea is to chose the paramter that lead to the highest number of usable 
-loci and the least proportion of missing data.
+general idea is to choose the parameter that leads to the highest number of usable 
+loci and the smallest proportion of missing data.
 
 **NOTE:** The r80 method just provides general guideliness and is just one of 
 many valid alternatives. Some dataset might "respond" differently to contransting 
@@ -572,10 +572,10 @@ There is no "one size fits all" when discussing parameter optimization.
 
 To run the r80 method on our dataset, we will run the `denovo_map.pl` wrapper 
 several times, changing the value of `M` within a range of values. Here, we will 
-do five simple runs over a smaller range of values (5 to 9). On real dataset, testing over 
+do five simple runs over a smaller range of values (5 to 9). On real datasets, testing over 
 a larger range of values is recommended (e.g., 1 to 12).
 
-Additionally, will generate a catalog using only a subset of samples, with the 
+Additionally, we will generate a catalog using only a subset of samples, with the 
 assumption that these samples are representative of the whole dataset. This is 
 often recommended to provide a general speedup of the process. For this purpose, we 
 have provided a secondary popmap (`info/popmap_catalog.tsv`) just containing 15 
@@ -593,7 +593,7 @@ popmap, and our new output directory. Also, we want to specify that our input
 data contains paired reads, that we want to remove PCR duplicate reads, and that 
 we only want to keep loci/SNPs present in 80% of samples per-population.
 
-As our input data, we will specify the processed the FASTQ files in 
+As our input data, we will specify the processed FASTQ files in 
 `arc-radseq-data.congen24/processed-samples/`. Note that these are the processed 
 samples provided in the shared data, not the ones we just generated using 
 `processed_radtags`. For more information, see the `denovo_map.pl` 
@@ -609,13 +609,14 @@ $ denovo_map.pl \
   -M 5 \
   -n 5 \
   --paired \
-  --rm-pcr-duplicates -r 0.8
+  --rm-pcr-duplicates \
+  -r 0.8
 ```
 
 After `denovo_map.pl` completes, we can check the number of retained loci by 
-checking at the log from `populations`. We can easily find this number on the 
+checking the log from `populations`. We can easily find this number on the 
 command line by searching for a line starting with "Kept" using the `grep` 
-program. This will give us information by the total number of loci and variant 
+program. This will give us information on the total number of loci and variant 
 sites retained after applying the 80% missing data filter.
 
 ```sh
@@ -625,10 +626,10 @@ $ cat param_opt_M5/populations.log | grep '^Kept'
     17346 variant sites remained.
 ```
 
-Additionally, we can look at the data in the SUMSTATS table `
-(`populations.sumstats.tsv`), which will provide us information of the number 
-of total remained loci that polymorphic (i.e., that contain variant sites). 
-We can contain this by counting the number of loci seen on the first column 
+Additionally, we can look at the data in the SUMSTATS table
+(`populations.sumstats.tsv`), which will provide us with information on the number 
+of total remaining loci that are polymorphic (i.e., that contain variant sites). 
+We can obtain this by counting the number of loci seen in the first column 
 of the SUMSTATS.
 
 ```sh
@@ -668,7 +669,7 @@ on the genetic distance between the individuals, it might be reasonable to expec
 `n` (the mistmatches *between* individuals) to be larger than `M` (the mismatches 
 *within* individuals).
 
-To do this, we can test of a range of `n` values against a fixed value of `M` (6 in 
+To do this, we can test a range of `n` values against a fixed value of `M` (6 in 
 this example). We could start at `n` equal to `M-1` (an unlikely value, but we can 
 use it to "anchor" our results) and end, for example, at `n` equals two times `M` 
 (again, an unlikely value, but provides a good comparison).
@@ -686,7 +687,8 @@ $ denovo_map.pl \
   -M 6 \
   -n 8 \
   --paired \
-  --rm-pcr-duplicates -r 0.8
+  --rm-pcr-duplicates \
+  -r 0.8
 ```
 
 Once each runs complete, we can extract the values of kept loci and variant 
@@ -706,9 +708,9 @@ as shown previously.
 
 From these results, we can see that the varying the values of `n` does not 
 generate major differences in the number of loci and variant sites kept. 
-Increasing `n` to 8 does to provide the largest number of polymorphic loci 
+Increasing `n` to 8 does provide the largest number of polymorphic loci 
 kept, but the differences between runs are relatively small. In this example, 
-we *could* proceed with `M=6` and `n=8`; however, both `M` and `n` set to 8 
+we *could* proceed with `M=6` and `n=8`; however, both `M` and `n` set to 6 
 is likely more than sufficient for an optimized analysis.
 
 ##### Takeways on paramater optimization
@@ -738,7 +740,7 @@ There is no need to rerun the whole *de novo* pipeline each time we need to
 new filters or generate a new export of the data.
 
 Like before, we generate a new output directory for this *de novo* run. We 
-will name this directory according to the paramters used to generate the 
+will name this directory according to the parameters used to generate the 
 catalog, in this case `M=6`.
 
 ```sh
@@ -813,9 +815,9 @@ it incorporates the final coverage after the consensus locus has been assembled
 after the removal of PCR duplicates. At this stage, we can also take a look at 
 the final genotypes that we will pass to the final stages of the analysis.
 
-We can start by taking a quick look at the `gstacks.log` file. Here, we are 
+We can start by taking a look at the `gstacks.log` file. Here, we are 
 taking a quick look in the command line, by extracting a few lines around the 
-line beggining with "`Genotyped`" using the program `grep`.
+line begining with "`Genotyped`" using the program `grep`.
 
 ```sh
 $ cat denovo_M6/gstacks.log | grep -A 3 -B 3 '^Genotyped' 
@@ -841,7 +843,7 @@ Why is that? This is because `gstacks` is removing PCR duplicate reads. Some of
 those initial reads making the 20x coverage were duplicates (in fact, 38.4% of 
 them, as we see in the log) and were removed, leaving us with a remaining 
 non-redundant depth of coverage of ~15x. PCR duplicates are a complex subject, 
-but generally, we care about the non-redundant coverage than the proportion 
+but generally, we care more about the non-redundant coverage than the proportion 
 of duplicates themselves. We can obtain good results if we have good (>10x) 
 non-redundant coverage even if the proportion of duplicates is relatively high.
 For more information on PCR duplicates see 
@@ -889,7 +891,7 @@ exploring the log files of `populations` in a later
 ### Generating a reference-based catalog
 
 When a reference genome of the species of interest (or a relatively close 
-one) is available, the best approach is likely generating reference-based 
+one) is available, the best approach is likely generating a reference-based 
 catalog. Instead of clusting the reads based on similarity to define the 
 loci as done *de novo*, the reference-based approach uses the location of 
 the aligned reads in the genome to define the loci. The reads of a locus 
@@ -897,7 +899,7 @@ are still assembled and the indiviuals are genotyped using the same key
 algorithms as a *de novo* analysis, but instead the final coordinate 
 system used is that of the reference genome provided.
 
-This reference-based approach starts by aligning the processed readed, e.g., 
+This reference-based approach starts by aligning the processed reads, e.g., 
 those generated by `process_radtags` to the reference genome using standard 
 short-read aligners and processesing (see the [alignments](#alignments)
 section for an example). The alignment must be sorted, but filtering 
@@ -916,7 +918,7 @@ using `populations`.
 #### Running `gstacks`
 
 To run `gstacks` we can provide the software with a path to a directory 
-contained all of our processed alignment files. In this case, we will use 
+containing all of our processed alignment files. In this case, we will use 
 the pre-generated alignments located in `arc-radseq-data.congen24/alignments/`.
 We will also specify a populations map file containing all the individuals 
 that we wish to add to the catalog (`arc-radseq-data.congen24/info/popmap.tsv`).
